@@ -129,6 +129,37 @@ spec:
                 }
             }
 
+	    stage('Push Image') {
+	        steps {
+		    container('buildah') {
+		        withCredentials([
+			    usernamePassword(
+			        credentialsId: registryCredentialsId,
+			        usernameVariable: 'REGISTRY_USERNAME',
+			        passwordVariable: 'REGISTRY_PASSWORD'
+			    )
+		        ]) {
+			   sh '''
+			        echo "===== REGISTRY LOGIN ====="
+
+			        printf '%s' "$REGISTRY_PASSWORD" | \
+				    buildah login \
+				        --username "$REGISTRY_USERNAME" \
+				        --password-stdin \
+				        ''' + "'${registryHost}'" + '''
+
+			        echo "===== PUSH IMAGE ====="
+
+			        buildah push \
+				    ''' + "'${image}:latest'" + '''
+
+			        echo "===== PUSH COMPLETE ====="
+			    '''
+		        }
+		    }
+	        }
+	    }
+
         }
 
         post {
