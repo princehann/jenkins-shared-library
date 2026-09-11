@@ -5,6 +5,9 @@ def call(Map config = [:]) {
     def sourceBranch = config.get('sourceBranch', 'main')
     def sourceCredentialsId = config.get('sourceCredentialsId', '')
 
+    def registryHost = config.registryHost
+    def registryCredentialsId = config.registryCredentialsId
+
     def image = config.image
     def dockerfile = config.get('dockerfile', 'Dockerfile')
     def buildContext = config.get('buildContext', '.')
@@ -56,6 +59,14 @@ spec:
 
                         if (!image) {
                             error('image is required')
+                        }
+
+                        if (!registryHost) {
+                           error('registryHost is required')
+                        }
+
+                        if (!registryCredentialsId) {
+                           error('registryCredentialsId is required')
                         }
                     }
                 }
