@@ -162,8 +162,8 @@ spec:
           cpu: "250m"
           memory: "512Mi"
         limits:
-          cpu: "1"
-          memory: "1Gi"
+          cpu: "2"
+          memory: "2Gi"
 
       tty: true
 
