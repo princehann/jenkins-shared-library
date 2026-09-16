@@ -157,14 +157,6 @@ spec:
       command:
         - cat
 
-      resources:
-        requests:
-          cpu: "250m"
-          memory: "512Mi"
-        limits:
-          cpu: "2"
-          memory: "2Gi"
-
       tty: true
 
       securityContext:
