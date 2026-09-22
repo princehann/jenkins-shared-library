@@ -142,23 +142,16 @@ def call(Map config = [:]) {
 apiVersion: v1
 kind: Pod
 spec:
-
   securityContext:
     runAsUser: 1000
     runAsGroup: 1000
     fsGroup: 1000
-
   containers:
-
     - name: buildah
-
       image: ${buildahImage}
-
       command:
         - cat
-
       tty: true
-
       securityContext:
         privileged: true
         runAsUser: 0
@@ -416,45 +409,27 @@ spec:
 apiVersion: v1
 kind: Pod
 spec:
-
   serviceAccountName: jenkins-deployer
-
   securityContext:
-
     runAsNonRoot: true
-
     runAsUser: 1000
-
     runAsGroup: 1000
-
     fsGroup: 1000
-
     seccompProfile:
       type: RuntimeDefault
-
   containers:
-
     - name: oc
-
       image: ${ocImage}
-
       command:
         - cat
-
       tty: true
-
       env:
-
         - name: HOME
           value: /tmp
-
         - name: KUBECONFIG
           value: /tmp/kubeconfig
-
       securityContext:
-
         allowPrivilegeEscalation: false
-
         capabilities:
           drop:
             - ALL
