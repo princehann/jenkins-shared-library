@@ -321,7 +321,7 @@ spec:
 
                                 echo "===== BUILD IMAGE ====="
 
-                                buildah bud \
+                                buildah bud --no-cache \
                                     -f "${dockerfile}" \
                                     -t "${image}:latest" \
                                     "${buildContext}"
