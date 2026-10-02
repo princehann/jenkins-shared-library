@@ -76,29 +76,23 @@ def call(Map config = [:]) {
      * PIPELINE
      * ============================================================
      */
-
     pipeline {
-
         /*
          * Tidak pakai global agent.
          *
          * CI dan CD akan punya Kubernetes Agent Pod masing-masing.
          */
         agent none
-
         options {
-
             /*
              * Satu aplikasi tidak boleh punya dua pipeline
              * berjalan bersamaan.
              */
             disableConcurrentBuilds()
-
             /*
              * Timestamp Jenkins console output.
              */
             timestamps()
-
             /*
              * Timeout keseluruhan pipeline.
              */
@@ -106,7 +100,6 @@ def call(Map config = [:]) {
                 time: 30,
                 unit: 'MINUTES'
             )
-
             /*
              * Jangan otomatis checkout repo Jenkinsfile.
              *
@@ -114,9 +107,7 @@ def call(Map config = [:]) {
              */
             skipDefaultCheckout(true)
         }
-
         stages {
-
             /*
              * ====================================================
              * CI
@@ -130,14 +121,10 @@ def call(Map config = [:]) {
              *
              * Pod ini digunakan dari checkout, build sampai image push.
              */
-
             stage('CI') {
-
                 agent {
                     kubernetes {
-
                         defaultContainer 'buildah'
-
                         yaml """
 apiVersion: v1
 kind: Pod
@@ -158,57 +145,45 @@ spec:
 """
                     }
                 }
-
                 stages {
-
                     /*
                      * --------------------------------------------
                      * VALIDATE CONFIGURATION
                      * --------------------------------------------
                      */
-
                     stage('Validate Configuration') {
-
                         steps {
-
                             script {
-
                                 if (!appName) {
                                     error(
                                         'appName is required'
                                     )
                                 }
-
                                 if (!sourceRepo) {
                                     error(
                                         'sourceRepo is required'
                                     )
                                 }
-
                                 if (!image) {
                                     error(
                                         'image is required'
                                     )
                                 }
-
                                 if (!registryCredentialsId) {
                                     error(
                                         'registryCredentialsId is required'
                                     )
                                 }
-
                                 if (!deployNamespace) {
                                     error(
                                         'deployNamespace is required'
                                     )
                                 }
-
                                 if (!deploymentName) {
                                     error(
                                         'deploymentName is required'
                                     )
                                 }
-
                                 if (!deploymentContainer) {
                                     error(
                                         'deploymentContainer is required'
@@ -217,50 +192,54 @@ spec:
                             }
                         }
                     }
-
                     /*
                      * --------------------------------------------
                      * CHECKOUT APPLICATION SOURCE
                      * --------------------------------------------
                      */
-
-                    stage('Checkout Source') {
-
-                        steps {
-
-                            script {
-
-                                def scmConfig = [
-
-                                    $class: 'GitSCM',
-
-                                    branches: [[
-                                        name: "*/${sourceBranch}"
-                                    ]],
-
-                                    userRemoteConfigs: [[
-                                        url: sourceRepo
-                                    ]]
-                                ]
-
-                                /*
-                                 * Credentials hanya ditambahkan
-                                 * kalau memang diperlukan.
-                                 */
-                                if (sourceCredentialsId) {
-
-                                    scmConfig
-                                        .userRemoteConfigs[0]
-                                        .credentialsId =
-                                            sourceCredentialsId
-                                }
-
-                                checkout(
-                                    scmConfig
-                                )
-                            }
-                        }
-                    }
+                   stage('Checkout Source') {
+                       steps {
+                           script {
+                               def scmConfig = [
+                                   $class: 'GitSCM',
+                                   branches: [[
+                                       name: "*/${sourceBranch}"
+                                   ]],
+                                   userRemoteConfigs: [[
+                                       url: sourceRepo
+                                   ]]
+                               ]
+                               
+                               if (sourceCredentialsId) {
+                                  scmConfig
+                                      .userRemoteConfigs[0]
+                                      .credentialsId =
+                                          sourceCredentialsId
+			       }
+				    
+                               def scmVars = checkout(
+				   scmConfig
+			       )
+				    
+                               def sourceCommit = scmVars.GIT_COMMIT
+			       def shortCommit = sourceCommit.take(7)
+				    
+                               env.SOURCE_COMMIT = sourceCommit
+			       env.SOURCE_COMMIT_SHORT = shortCommit
+			       env.IMAGE_TAG = "build-${env.BUILD_NUMBER}-${shortCommit}"
+			       env.DEPLOY_IMAGE = "${image}:${env.IMAGE_TAG}"
+				    
+                               echo """
+	           ===== SOURCE REVISION =====
+	           Commit Full   : ${env.SOURCE_COMMIT}
+	           Commit Short  : ${env.SOURCE_COMMIT_SHORT}
+	           Jenkins Build : ${env.BUILD_NUMBER}
+		   Image Tag     : ${env.IMAGE_TAG}
+		   Deploy Image  : ${env.DEPLOY_IMAGE}
+	           """
+			   }
+		      }
+                   } 
 
                     /*
                      * --------------------------------------------
@@ -269,9 +248,7 @@ spec:
                      */
 
                     stage('Validate Source') {
-
                         steps {
-
                             sh """
                                 set -eu
 
@@ -313,18 +290,23 @@ spec:
                      */
 
                     stage('Build Image') {
-
                         steps {
-
                             sh """
                                 set -eux
 
                                 echo "===== BUILD IMAGE ====="
 
+                                echo "Versioned image : ${env.DEPLOY_IMAGE}"
+                                echo "Latest image    : ${image}:latest"
+
                                 buildah bud --no-cache \
                                     -f "${dockerfile}" \
-                                    -t "${image}:latest" \
+                                    -t "${env.DEPLOY_IMAGE}" \
                                     "${buildContext}"
+ 
+                                buildah tag \
+                                    "${env.DEPLOY_IMAGE}" \
+                                    "${image}:latest"
                             """
                         }
                     }
@@ -334,26 +316,18 @@ spec:
                      * PUSH IMAGE
                      * --------------------------------------------
                      */
-
                     stage('Push Image') {
-
                         steps {
-
                             withCredentials([
-
                                 usernamePassword(
-
                                     credentialsId:
                                         registryCredentialsId,
-
                                     usernameVariable:
                                         'REGISTRY_USERNAME',
-
                                     passwordVariable:
                                         'REGISTRY_PASSWORD'
                                 )
                             ]) {
-
                                 sh """
                                     echo "===== REGISTRY LOGIN ====="
 
@@ -367,7 +341,12 @@ spec:
 
                                     set -x
 
-                                    echo "===== PUSH IMAGE ====="
+                                    echo "===== PUSH VERSIONED IMAGE ====="
+
+                                    buildah push \
+                                        "${env.DEPLOY_IMAGE}"
+
+                                    echo "===== PUSH LATEST IMAGE ====="
 
                                     buildah push \
                                         "${image}:latest"
@@ -397,14 +376,10 @@ spec:
              *
              * Pod ini NON-PRIVILEGED.
              */
-
             stage('Deploy to OKD') {
-
                 agent {
                     kubernetes {
-
                         defaultContainer 'oc'
-
                         yaml """
 apiVersion: v1
 kind: Pod
@@ -438,7 +413,6 @@ spec:
                 }
 
                 steps {
-
                     /*
                      * --------------------------------------------
                      * AUTHENTICATION
@@ -481,11 +455,10 @@ spec:
                         echo ""
 
                         echo "===== DEPLOYMENT TARGET ====="
-
                         echo "Namespace  : ${deployNamespace}"
                         echo "Deployment : ${deploymentName}"
                         echo "Container  : ${deploymentContainer}"
-                        echo "Image      : ${image}:latest"
+                        echo "Image      : ${env.DEPLOY_IMAGE}"
 
                         echo ""
 
@@ -519,15 +492,7 @@ spec:
 
                         oc set image \
                             deployment/${deploymentName} \
-                            ${deploymentContainer}=${image}:latest \
-                            -n "${deployNamespace}"
-
-                        echo ""
-
-                        echo "===== FORCE NEW ROLLOUT ====="
-
-                        oc rollout restart \
-                            deployment/${deploymentName} \
+                            ${deploymentContainer}=${env.DEPLOY_IMAGE} \
                             -n "${deployNamespace}"
 
                         echo ""
@@ -563,22 +528,21 @@ spec:
          */
 
         post {
-
             success {
-
                 echo """
 ============================================================
 PIPELINE SUCCESS
-Application : ${appName}
-Image       : ${image}:latest
-Namespace   : ${deployNamespace}
-Deployment  : ${deploymentName}
+Application   : ${appName}
+Jenkins Build : ${env.BUILD_NUMBER}
+Source Commit : ${env.SOURCE_COMMIT}
+Image Tag     : ${env.IMAGE_TAG}
+Image         : ${env.DEPLOY_IMAGE}
+Namespace     : ${deployNamespace}
+Deployment    : ${deploymentName}
 ============================================================
 """
             }
-
             failure {
-
                 echo """
 ============================================================
 PIPELINE FAILED
