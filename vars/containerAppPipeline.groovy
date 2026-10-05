@@ -388,7 +388,7 @@ spec:
              *
              * Pod ini NON-PRIVILEGED.
              */
-            stage('Deploy to OKD') {
+            stage('CD') {
                 agent {
                     kubernetes {
                         defaultContainer 'oc'
