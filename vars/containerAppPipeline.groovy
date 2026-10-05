@@ -228,10 +228,16 @@ spec:
 				    
                                def sourceCommit = scmVars.GIT_COMMIT
 			       def shortCommit = sourceCommit.take(7)
+
+                               def buildTimestamp = new Date().format(
+                                   'yyyy-dd-MM-HHmm',
+                                   TimeZone.getTimeZone('Asia/Jakarta')
+                               )
 				    
                                env.SOURCE_COMMIT = sourceCommit
 			       env.SOURCE_COMMIT_SHORT = shortCommit
-			       env.IMAGE_TAG = "build-${env.BUILD_NUMBER}-${shortCommit}"
+                               env.BUILD_TIMESTAMP = buildTimestamp
+			       env.IMAGE_TAG = "build-${env.BUILD_NUMBER}-${shortCommit}-${buildTimestamp}"
 			       env.DEPLOY_IMAGE = "${image}:${env.IMAGE_TAG}"
 				    
                                echo """
@@ -239,6 +245,7 @@ spec:
 	           Commit Full   : ${env.SOURCE_COMMIT}
 	           Commit Short  : ${env.SOURCE_COMMIT_SHORT}
 	           Jenkins Build : ${env.BUILD_NUMBER}
+                   Timestamp     : ${env.BUILD_TIMESTAMP}
 		   Image Tag     : ${env.IMAGE_TAG}
 		   Deploy Image  : ${env.DEPLOY_IMAGE}
 	           """
