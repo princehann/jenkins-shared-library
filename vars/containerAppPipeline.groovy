@@ -145,6 +145,11 @@ spec:
 """
                     }
                 }
+
+                options {
+                    throttle(['ci-container-build'])
+                }
+
                 stages {
                     /*
                      * --------------------------------------------
