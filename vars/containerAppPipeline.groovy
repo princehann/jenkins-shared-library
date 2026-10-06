@@ -136,6 +136,13 @@ spec:
   containers:
     - name: buildah
       image: ${buildahImage}
+	  resources:
+        requests:
+          cpu: "1"
+          memory: "1Gi"
+        limits:
+          cpu: "4"
+          memory: "4Gi"
       command:
         - cat
       tty: true
