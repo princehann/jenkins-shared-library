@@ -136,7 +136,7 @@ spec:
   containers:
     - name: buildah
       image: ${buildahImage}
-	  resources:
+      resources:
         requests:
           cpu: "1"
           memory: "1Gi"
