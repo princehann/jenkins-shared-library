@@ -237,7 +237,7 @@ spec:
 			       def shortCommit = sourceCommit.take(7)
 
                                def buildTimestamp = new Date().format(
-                                   'yyyy-dd-MM-HHmm',
+                                   'yyyy-MM-dd-HHmm',
                                    TimeZone.getTimeZone('Asia/Jakarta')
                                )
 				    
