@@ -516,6 +516,24 @@ spec:
 
                         echo ""
 
+                        echo "===== CHECK DEPLOYMENT PAUSE STATE ====="
+
+                        PAUSED="${'$'}(oc get deployment/${deploymentName} \
+                            -n "${deployNamespace}" \
+                            -o jsonpath='{.spec.paused}')"
+
+                        if [ "${'$'}PAUSED" = "true" ]; then
+                            echo "Deployment is paused. Resuming..."
+
+                            oc rollout resume \
+                                deployment/${deploymentName} \
+                                -n "${deployNamespace}"
+                        else
+                            echo "Deployment is already active."
+                        fi
+
+                        echo ""
+
                         echo "===== WAIT FOR ROLLOUT ====="
 
                         oc rollout status \
