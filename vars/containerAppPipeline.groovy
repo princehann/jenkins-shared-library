@@ -318,7 +318,7 @@ spec:
                                 echo "Versioned image : ${env.DEPLOY_IMAGE}"
                                 echo "Latest image    : ${image}:latest"
 
-                                buildah bud --no-cache \
+                                buildah bud \
                                     -f "${dockerfile}" \
                                     -t "${env.DEPLOY_IMAGE}" \
                                     "${buildContext}"
