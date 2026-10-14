@@ -304,6 +304,38 @@ spec:
 
                     /*
                      * --------------------------------------------
+                     * REGISTRY LOGIN
+                     * --------------------------------------------
+                    */
+
+                    stage('Registry Login') {
+                        steps {
+                            withCredentials([
+                                usernamePassword(
+                                    credentialsId: registryCredentialsId,
+                                    usernameVariable: 'REGISTRY_USERNAME',
+                                    passwordVariable: 'REGISTRY_PASSWORD'
+                                )
+                            ]) {
+                                sh """
+                                    set +x
+
+                                    echo "===== REGISTRY LOGIN ====="
+
+                                    printf '%s' "\$REGISTRY_PASSWORD" | \
+                                        buildah login \
+                                        --username "\$REGISTRY_USERNAME" \
+                                        --password-stdin \
+                                        "${registryHost}"
+
+                                    echo "Registry login successful."
+                                """
+                             }
+                         }
+                     }
+
+                    /*
+                     * --------------------------------------------
                      * BUILD CONTAINER IMAGE
                      * --------------------------------------------
                      */
